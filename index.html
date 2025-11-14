@@ -1,0 +1,279 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>AI Copilot — Prompt to Report</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- PDF Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      margin: 30px;
+      background: #f3f4f6;
+      color: #111827;
+      line-height: 1.6;
+    }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: #111827; }
+    #prompt-box {
+      width: 70%; padding: 12px; font-size: 15px;
+      border-radius: 8px; border: 1px solid #d1d5db;
+      background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    #submit-btn {
+      padding: 12px 18px; margin-left: 10px; border-radius: 8px;
+      background: #2563eb; color: white; border: none; cursor: pointer;
+      font-weight: 500; transition: all 0.2s ease-in-out;
+    }
+    #submit-btn:hover { background: #1d4ed8; }
+    #submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    #report-section {
+      margin-top: 28px; padding: 24px; background: white; border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,.05);
+    }
+    #report-title { font-size: 20px; font-weight: 600; margin-bottom: 6px; color: #111827; }
+    #report-summary { font-size: 14px; color: #4b5563; margin-bottom: 20px; }
+
+    .metric-card {
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 14px 18px; margin-bottom: 10px; display: flex;
+      justify-content: space-between; align-items: center;
+    }
+    .metric-label { font-weight: 500; color: #374151; font-size: 15px; }
+    .metric-value { font-weight: 600; color: #2563eb; font-size: 16px; }
+
+    .chart-container { width: 480px; max-width: 100%; margin: 20px 0; }
+
+    .section-title { font-weight: 600; font-size: 16px; color: #1f2937; margin: 24px 0 10px; }
+
+    ul { padding-left: 22px; margin-top: 6px; }
+    ul li { margin-bottom: 8px; font-size: 14px; color: #374151; }
+
+    #download-pdf-btn {
+      margin-top: 16px;
+      padding: 10px 14px;
+      background: #1f2937;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #download-pdf-btn:hover { background: #111827; }
+
+    #loading { margin-top: 12px; color: #555; font-size: 14px; }
+
+    #history {
+      margin-top: 22px; font-size: 13px; color: #4b5563;
+      background: #f9fafb; border-radius: 8px; padding: 10px 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>AI Copilot — Prompt to Report</h1>
+
+  <div>
+    <input id="prompt-box" placeholder="e.g. Show leakage by provider for the last 3 months" />
+    <button id="submit-btn">Generate</button>
+  </div>
+
+  <div id="loading" style="display:none;">⏳ Generating report…</div>
+
+  <div id="report-section" style="display:none;">
+    <div id="report-title"></div>
+    <div id="report-summary"></div>
+
+    <div class="section-title">📊 Metrics Overview</div>
+    <div id="report-metrics"></div>
+
+    <div class="chart-container"><canvas id="report-chart"></canvas></div>
+
+    <div id="actions-block" style="display:none;">
+      <div class="section-title">🧭 Recommended Actions</div>
+      <ul id="report-actions"></ul>
+    </div>
+
+    <!-- NEW PDF BUTTON -->
+    <button id="download-pdf-btn">📄 Download PDF</button>
+  </div>
+
+  <div id="history"></div>
+
+<script>
+const n8nWebhook = "https://leadsquared.app.n8n.cloud/webhook/38fe1165-731f-438b-81df-5bc5de35481c";
+
+const submitBtn = document.getElementById('submit-btn');
+const promptBox = document.getElementById('prompt-box');
+const loading = document.getElementById('loading');
+const reportSection = document.getElementById('report-section');
+const reportTitle = document.getElementById('report-title');
+const reportSummary = document.getElementById('report-summary');
+const reportMetrics = document.getElementById('report-metrics');
+const reportActions = document.getElementById('report-actions');
+const actionsBlock = document.getElementById('actions-block');
+const downloadPdfBtn = document.getElementById('download-pdf-btn');
+const historyDiv = document.getElementById('history');
+let chartInstance = null;
+
+submitBtn.onclick = async () => {
+  const prompt = promptBox.value.trim();
+  if (!prompt) { alert('Please enter a prompt'); return; }
+
+  submitBtn.disabled = true;
+  loading.style.display = 'block';
+  reportSection.style.display = 'none';
+  reportMetrics.innerHTML = '';
+  reportActions.innerHTML = '';
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  try {
+    const resp = await fetch(n8nWebhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    const text = await resp.text();
+    let data = JSON.parse(text);
+    if (data && typeof data === "object" && data["object Object"]) data = data["object Object"];
+    const report = Array.isArray(data) ? data[0] : data;
+
+    renderReport(report);
+    addHistoryEntry(prompt, report.report_title || 'Report');
+  } catch (err) {
+    alert('Error calling AI Lab: ' + (err.message || err));
+    console.error(err);
+  } finally {
+    submitBtn.disabled = false;
+    loading.style.display = 'none';
+  }
+};
+
+function renderReport(data) {
+  reportSection.style.display = 'block';
+  reportTitle.textContent = data.report_title || 'AI Report';
+  reportSummary.textContent = data.summary || '';
+
+  const numericMetrics = flattenMetrics(data.metrics || {});
+  reportMetrics.innerHTML = '';
+
+  Object.entries(numericMetrics).forEach(([key, val]) => addMetricCard(key, val));
+
+  const labels = Object.keys(numericMetrics);
+  const values = Object.values(numericMetrics);
+
+  const ctx = document.getElementById('report-chart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+
+  let chartType = 'bar';
+  if (labels.some(l => /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|week|month|q\d)\b/i.test(l))) {
+    chartType = 'line';
+  } else if (labels.length <= 6) {
+    chartType = 'pie';
+  }
+
+  chartInstance = new Chart(ctx, {
+    type: chartType,
+    data: {
+      labels,
+      datasets: [{
+        label: data.report_title || "Report Data",
+        data: values,
+        backgroundColor: generateColors(labels.length),
+        borderColor: '#1d4ed8',
+        borderWidth: 1,
+        fill: chartType === 'line'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: chartType !== 'bar', position: 'bottom' } },
+      scales: chartType !== 'pie' ? { y: { beginAtZero: true } } : {}
+    }
+  });
+
+  actionsBlock.style.display = 'none';
+  if (data.recommended_actions && data.recommended_actions.length) {
+    actionsBlock.style.display = 'block';
+    reportActions.innerHTML = '';
+    data.recommended_actions.forEach(a => {
+      const li = document.createElement('li');
+      li.textContent = a;
+      reportActions.appendChild(li);
+    });
+  } else {
+    actionsBlock.style.display = 'block';
+    const li = document.createElement('li');
+    li.textContent = "No specific recommendations were returned. Analyze trends and address outliers.";
+    reportActions.appendChild(li);
+  }
+}
+
+/* ---------------------- PDF DOWNLOAD LOGIC ---------------------- */
+
+downloadPdfBtn.onclick = async () => {
+  const { jsPDF } = window.jspdf;
+
+  const pdf = new jsPDF('p', 'pt', 'a4');
+
+  const reportElement = document.getElementById('report-section');
+
+  const canvas = await html2canvas(reportElement, { scale: 2 });
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const imgWidth = pageWidth - 40;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  pdf.addImage(imgData, 'JPEG', 20, 20, imgWidth, imgHeight);
+
+  pdf.save(`AI_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+};
+
+/* --------------------------------------------------------------- */
+
+function flattenMetrics(obj, prefix = '', out = {}) {
+  for (const [key, val] of Object.entries(obj)) {
+    const label = prefix ? `${prefix} - ${key}` : key;
+    if (typeof val === 'number') out[label] = val;
+    else if (typeof val === 'object' && val !== null) flattenMetrics(val, label, out);
+  }
+  return out;
+}
+
+function addMetricCard(label, value) {
+  const card = document.createElement('div');
+  card.className = 'metric-card';
+  const lbl = document.createElement('div');
+  lbl.className = 'metric-label';
+  lbl.textContent = label.replace(/_/g, ' ');
+  const val = document.createElement('div');
+  val.className = 'metric-value';
+  val.textContent = value;
+  card.appendChild(lbl);
+  card.appendChild(val);
+  reportMetrics.appendChild(card);
+}
+
+function generateColors(n) {
+  const palette = ['#3b82f6','#60a5fa','#93c5fd','#a7f3d0','#34d399','#10b981','#059669','#047857','#065f46'];
+  return Array.from({ length: n }, (_, i) => palette[i % palette.length]);
+}
+
+function addHistoryEntry(prompt, title) {
+  const entry = document.createElement('div');
+  entry.className = 'small';
+  entry.textContent = `${new Date().toLocaleString()} — ${title} — "${prompt}"`;
+  historyDiv.prepend(entry);
+}
+
+</script>
+</body>
+</html>
