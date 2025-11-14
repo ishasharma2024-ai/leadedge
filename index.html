@@ -3,122 +3,115 @@
 <head>
   <meta charset="utf-8" />
   <title>AI Copilot — Prompt to Report</title>
+
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
-    /* ----------------------------------------------------------
-       LEADSQUARED BRANDING — GLOBAL THEME
-    -----------------------------------------------------------*/
+    /* ---------------------------------------------------------
+       LEADSQUARED THEME — GLOBAL STYLING
+    --------------------------------------------------------- */
+
     body {
       margin: 0;
-      padding: 0;
-      background: #f5f7fb;
+      background: #F3F4F6;
       font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto;
-      color: #1b1f24;
+      color: #1B1F24;
     }
 
-    /* Top header bar (LSQ style) */
+    /* ---------------------------------------------------------
+       HEADER BAR (Matches LSQ Top Navigation)
+    --------------------------------------------------------- */
     #lsq-header {
-      background: #0075ff;
+      background: #1564FF;
       color: white;
-      padding: 16px 28px;
+      padding: 18px 32px;
       font-size: 20px;
       font-weight: 600;
-      letter-spacing: 0.3px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0px 2px 10px rgba(0,0,0,0.10);
     }
 
-    /* Main container */
+    /* ---------------------------------------------------------
+       MAIN CONTAINER
+    --------------------------------------------------------- */
     .container {
-      padding: 32px 40px;
-      max-width: 1000px;
-      margin: auto;
-    }
-
-    /* Input row */
-    #prompt-box {
-      width: 70%;
-      padding: 14px;
-      font-size: 15px;
-      border-radius: 8px;
-      border: 1px solid #d1d7e0;
+      max-width: 1080px;
+      margin: 30px auto;
       background: white;
-      box-shadow: 0px 1px 3px rgba(0,0,0,0.04);
-    }
-
-    #submit-btn {
-      padding: 14px 22px;
-      margin-left: 10px;
-      background: #0075ff;
-      border: none;
-      color: white;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    #submit-btn:hover { background: #0060d4; }
-    #submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* Card container */
-    #report-section {
-      margin-top: 30px;
-      background: white;
+      padding: 28px 40px;
       border-radius: 14px;
-      padding: 28px;
-      box-shadow: 0px 4px 12px rgba(0,0,0,0.06);
-      display: none;
+      box-shadow: 0px 4px 14px rgba(0,0,0,0.05);
     }
 
-    #report-title {
-      font-size: 22px;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    #report-summary {
-      font-size: 14px;
-      color: #444;
+    /* Prompt + Button */
+    #input-row {
+      display: flex;
+      gap: 12px;
       margin-bottom: 20px;
     }
 
-    .section-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: #1b1f24;
-      margin: 20px 0 10px;
-      border-left: 4px solid #0075ff;
-      padding-left: 10px;
+    #prompt-box {
+      flex: 1;
+      padding: 14px;
+      font-size: 15px;
+      border-radius: 8px;
+      border: 1px solid #D1D5DB;
     }
 
+    #submit-btn {
+      padding: 14px 20px;
+      background: #1564FF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #submit-btn:hover { opacity: 0.85; }
+
+    /* ---------------------------------------------------------
+       METRIC CARDS
+    --------------------------------------------------------- */
     .metric-card {
-      background: #f9fafc;
-      border: 1px solid #e4e8f0;
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
       border-radius: 10px;
-      padding: 14px 18px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
-      margin-bottom: 10px;
     }
 
-    .metric-label { color: #333; font-weight: 500; }
-    .metric-value { color: #0075ff; font-weight: 700; }
+    .metric-label { font-size: 15px; font-weight: 500; color: #374151; }
+    .metric-value { font-size: 16px; font-weight: 700; color: #1564FF; }
 
-    /* Spinner */
-    #loading {
+    .section-title {
+      font-weight: 600;
+      font-size: 17px;
+      color: #1F2937;
+      margin: 25px 0 10px;
+    }
+
+    /* ---------------------------------------------------------
+       ANIMATED LOADING SPINNER (LSQ BLUE)
+    --------------------------------------------------------- */
+    #loader {
       display: none;
       margin-top: 20px;
       text-align: center;
     }
 
     .spinner {
-      margin: 0 auto;
-      border: 4px solid #e5e7eb;
-      border-top: 4px solid #0075ff;
+      border: 4px solid #E5E7EB;
+      border-top: 4px solid #1564FF;
       border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      animation: spin 0.9s linear infinite;
+      width: 42px;
+      height: 42px;
+      animation: spin 1s linear infinite;
+      margin: auto;
     }
 
     @keyframes spin {
@@ -126,182 +119,168 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* History small text */
-    #history {
-      margin-top: 24px;
-      font-size: 13px;
-      color: #4b5563;
+    /* ---------------------------------------------------------
+       PDF BUTTON — LSQ STYLING
+    --------------------------------------------------------- */
+    #pdf-btn {
+      margin-top: 20px;
+      padding: 12px 18px;
+      background: #10B981;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
     }
+    #pdf-btn:hover { opacity: 0.85; }
   </style>
 </head>
 
 <body>
 
-  <!-- Top LSQ Header -->
+  <!-- LSQ HEADER -->
   <div id="lsq-header">AI Copilot — Prompt to Report</div>
 
   <div class="container">
+
     <!-- Input Row -->
-    <div>
-      <input id="prompt-box" placeholder="e.g. Show leakage by provider for the last 3 months" />
+    <div id="input-row">
+      <input id="prompt-box" placeholder="e.g. Show leakage by provider for last 3 months" />
       <button id="submit-btn">Generate</button>
     </div>
 
-    <!-- LSQ Spinner -->
-    <div id="loading">
-      <div class="spinner"></div>
-      <div style="margin-top:8px; color:#555;">Generating your report…</div>
-    </div>
+    <!-- LOADING ANIMATION -->
+    <div id="loader"><div class="spinner"></div><p>Generating report...</p></div>
 
-    <!-- Report Section -->
-    <div id="report-section">
+    <!-- REPORT SECTION -->
+    <div id="report-section" style="display:none;">
       <div id="report-title"></div>
       <div id="report-summary"></div>
 
       <div class="section-title">📊 Metrics Overview</div>
       <div id="report-metrics"></div>
 
-      <div class="chart-container">
-        <canvas id="report-chart"></canvas>
-      </div>
+      <div class="section-title">📈 Visualization</div>
+      <canvas id="report-chart"></canvas>
 
-      <div id="actions-block" style="display:none;">
-        <div class="section-title">🧭 Recommended Actions</div>
-        <ul id="report-actions"></ul>
-      </div>
+      <div class="section-title">🧭 Recommended Actions</div>
+      <ul id="report-actions"></ul>
+
+      <button id="pdf-btn">⬇ Download PDF</button>
+
     </div>
 
-    <div id="history"></div>
   </div>
+
 
 <script>
 const n8nWebhook = "https://leadsquared.app.n8n.cloud/webhook/38fe1165-731f-438b-81df-5bc5de35481c";
 
 const submitBtn = document.getElementById('submit-btn');
 const promptBox = document.getElementById('prompt-box');
-const loading = document.getElementById('loading');
+const loader = document.getElementById('loader');
 const reportSection = document.getElementById('report-section');
 const reportTitle = document.getElementById('report-title');
 const reportSummary = document.getElementById('report-summary');
 const reportMetrics = document.getElementById('report-metrics');
 const reportActions = document.getElementById('report-actions');
-const actionsBlock = document.getElementById('actions-block');
-const historyDiv = document.getElementById('history');
 let chartInstance = null;
 
-/* ---------------------------------------------
-   SUBMIT HANDLER
-----------------------------------------------*/
 submitBtn.onclick = async () => {
   const prompt = promptBox.value.trim();
-  if (!prompt) { alert('Please enter a prompt'); return; }
+  if (!prompt) return alert("Please enter a prompt.");
 
   submitBtn.disabled = true;
-  loading.style.display = 'block';
-  reportSection.style.display = 'none';
-  reportMetrics.innerHTML = '';
-  reportActions.innerHTML = '';
-  if (chartInstance) { chartInstance.destroy(); }
+  loader.style.display = "block";
+  reportSection.style.display = "none";
 
   try {
     const resp = await fetch(n8nWebhook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ prompt })
     });
 
     const text = await resp.text();
     let data = JSON.parse(text);
-    if (data && typeof data === "object" && data["object Object"]) data = data["object Object"];
-    const report = Array.isArray(data) ? data[0] : data;
 
+    if (data && typeof data === "object" && data["object Object"]) {
+      data = data["object Object"];
+    }
+
+    const report = Array.isArray(data) ? data[0] : data;
     renderReport(report);
-    addHistoryEntry(prompt, report.report_title || 'Report');
+
   } catch (err) {
-    alert('Error calling AI Lab: ' + (err.message || err));
-    console.error(err);
-  } finally {
-    submitBtn.disabled = false;
-    loading.style.display = 'none';
+    alert("Error: " + err.message);
   }
+
+  submitBtn.disabled = false;
+  loader.style.display = "none";
 };
 
-/* ---------------------------------------------
-   REPORT RENDERING
-----------------------------------------------*/
 function renderReport(data) {
-  reportSection.style.display = 'block';
-  reportTitle.textContent = data.report_title || 'AI Report';
-  reportSummary.textContent = data.summary || '';
+  reportSection.style.display = "block";
+  reportTitle.innerHTML = `<h2>${data.report_title}</h2>`;
+  reportSummary.innerHTML = `<p>${data.summary}</p>`;
 
-  const numericMetrics = flattenMetrics(data.metrics || {});
-  reportMetrics.innerHTML = '';
-  Object.entries(numericMetrics).forEach(([k, v]) => addMetricCard(k, v));
+  // Metrics
+  reportMetrics.innerHTML = "";
+  const flat = flattenMetrics(data.metrics);
+  Object.entries(flat).forEach(([k,v]) => {
+    reportMetrics.innerHTML += `
+      <div class="metric-card">
+        <div class="metric-label">${k}</div>
+        <div class="metric-value">${v}</div>
+      </div>`;
+  });
 
-  const labels = Object.keys(numericMetrics);
-  const values = Object.values(numericMetrics);
-  const ctx = document.getElementById('report-chart').getContext('2d');
+  // Chart
+  const labels = Object.keys(flat);
+  const values = Object.values(flat);
+
   if (chartInstance) chartInstance.destroy();
-
-  let chartType = labels.length <= 6 ? 'pie' : 'bar';
+  const ctx = document.getElementById("report-chart");
 
   chartInstance = new Chart(ctx, {
-    type: chartType,
+    type: labels.length <= 6 ? "pie" : "bar",
     data: {
       labels,
       datasets: [{
-        label: data.report_title || "Report Data",
         data: values,
-        backgroundColor: generateColors(labels.length),
-        borderWidth: 1
+        backgroundColor: ["#1564FF", "#60A5FA", "#93C5FD", "#A7F3D0", "#34D399", "#10B981"]
       }]
-    },
-    options: { responsive: true }
+    }
   });
 
-  actionsBlock.style.display = 'none';
-  if (data.recommended_actions?.length) {
-    actionsBlock.style.display = 'block';
-    reportActions.innerHTML = '';
-    data.recommended_actions.forEach(a => {
-      const li = document.createElement('li');
-      li.textContent = a;
-      reportActions.appendChild(li);
-    });
-  }
+  // Actions
+  reportActions.innerHTML = "";
+  (data.recommended_actions || []).forEach(a => {
+    reportActions.innerHTML += `<li>${a}</li>`;
+  });
 }
 
-/* ---------------------------------------------
-   HELPERS
-----------------------------------------------*/
-function flattenMetrics(obj, prefix = '', out = {}) {
-  for (const [key, val] of Object.entries(obj)) {
-    const label = prefix ? `${prefix} - ${key}` : key;
-    if (typeof val === 'number') out[label] = val;
-    else if (typeof val === 'object' && val !== null) flattenMetrics(val, label, out);
+// Flatten metrics
+function flattenMetrics(obj, out = {}, prefix = "") {
+  for (const [k,v] of Object.entries(obj || {})) {
+    const label = prefix ? `${prefix} - ${k}` : k;
+    if (typeof v === "number") out[label] = v;
+    else if (typeof v === "object") flattenMetrics(v, out, label);
   }
   return out;
 }
 
-function addMetricCard(label, value) {
-  const card = document.createElement('div');
-  card.className = 'metric-card';
-  card.innerHTML = `
-    <div class="metric-label">${label.replace(/_/g, ' ')}</div>
-    <div class="metric-value">${value}</div>`;
-  reportMetrics.appendChild(card);
-}
-
-function generateColors(n) {
-  const palette = ['#0075ff','#4ea6ff','#8bc6ff','#aee1ff','#d0eeff','#f0faff'];
-  return Array.from({ length: n }, (_, i) => palette[i % palette.length]);
-}
-
-function addHistoryEntry(prompt, title) {
-  const entry = document.createElement('div');
-  entry.textContent = `${new Date().toLocaleString()} — ${title} — "${prompt}"`;
-  historyDiv.prepend(entry);
-}
+/* --------------------------------------------------------
+   PDF Export
+--------------------------------------------------------- */
+document.getElementById("pdf-btn").onclick = () => {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  pdf.text("AI Copilot Report", 14, 14);
+  pdf.addHTML(document.querySelector(".container"), () => {
+    pdf.save("report.pdf");
+  });
+};
 </script>
 
 </body>
