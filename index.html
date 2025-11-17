@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <title>AI Copilot — Prompt to Report</title>
@@ -13,13 +12,26 @@
 
     <style>
         body {
-            margin: 0; padding: 0;
+            margin: 0;
+            padding: 0;
             background: #F5F7FA;
             font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto;
-            color: #1A1D24;
         }
 
-        /* BLUE STRIP HEADER */
+        /* LSQ NAVBAR */
+        .lsq-navbar {
+            background: #ffffff;
+            padding: 14px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+        }
+
+        .lsq-navbar img {
+            height: 26px;
+        }
+
+        /* BLUE HEADER */
         .header-strip {
             width: 100%;
             background: #1564FF;
@@ -30,76 +42,115 @@
         }
 
         /* MAIN LAYOUT */
-        .main-layout { display: flex; height: calc(100vh - 60px); }
-
-        /* LEFT: Recent Prompts */
-        .left-panel {
-            width: 270px; background: white;
-            border-right: 1px solid #E4E7EC;
-            padding: 20px 16px; overflow-y: auto;
+        .main-layout {
+            display: flex;
+            height: calc(100vh - 110px);
         }
 
-        .left-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+        /* LEFT PANEL */
+        .left-panel {
+            width: 270px;
+            background: white;
+            border-right: 1px solid #E4E7EC;
+            padding: 20px 16px;
+            overflow-y: auto;
+        }
+
+        .left-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
 
         .prompt-item {
-            background: #F3F6FC; padding: 10px 12px;
-            border-radius: 6px; margin-bottom: 8px;
-            font-size: 14px; cursor: pointer;
+            background: #F3F6FC;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
         }
 
-        .prompt-item:hover { background: #e8f0ff; }
+        .prompt-item:hover { background: #e7eeff; }
 
-        /* MAIN CONTENT */
-        .content-area { flex: 1; padding: 30px; overflow-y: auto; }
+        /* CONTENT AREA */
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
 
-        .input-row { display: flex; gap: 12px; margin-bottom: 25px; }
+        /* INPUT ROW */
+        .input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
 
         #prompt {
-            width: 100%; padding: 14px;
-            border-radius: 8px; border: 1px solid #D0D5DD;
-            font-size: 15px;
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #D0D5DD;
         }
 
         #generateBtn {
-            background: #1564FF; color: white;
-            border: none; padding: 0 22px;
-            border-radius: 8px; font-size: 15px;
+            background: #1564FF;
+            color: white;
+            border: none;
+            padding: 0 22px;
+            border-radius: 8px;
             cursor: pointer;
         }
 
         /* TOOLBAR */
         .toolbar {
-            display: flex; justify-content: flex-end;
-            gap: 12px; margin-bottom: 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 12px;
         }
 
-        .btn-reset { padding: 8px 18px; background: #E4E7EC; border-radius: 6px; border: none; cursor: pointer; }
-        .btn-pdf { padding: 8px 18px; background: #1564FF; color: white; border-radius: 6px; border: none; cursor: pointer; }
+        .toolbar button {
+            padding: 8px 18px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-reset { background: #E4E7EC; }
+        .btn-pdf { background: #1564FF; color: white; }
 
         /* REPORT BOX */
         .report-box {
-            background: white; border-radius: 10px;
-            padding: 28px; box-shadow: 0 2px 6px rgba(0,0,0,0.07);
-            margin-bottom: 40px;
+            background: white;
+            border-radius: 10px;
+            padding: 28px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.07);
         }
 
         .section-title {
-            font-size: 17px; font-weight: 600;
-            margin: 20px 0 10px 0;
-            display: flex; align-items: center; gap: 6px;
+            font-size: 17px;
+            font-weight: 600;
+            margin-top: 20px;
         }
 
         .metric-item {
-            padding: 10px 14px; background: #F9FAFB;
-            border: 1px solid #E4E7EC; border-radius: 6px;
-            margin-bottom: 8px; display: flex; justify-content: space-between;
+            padding: 10px;
+            background: #F9FAFB;
+            border-radius: 6px;
+            border: 1px solid #E4E7EC;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
         }
 
-        /* SHIMMER LOADING */
+        /* SHIMMER */
         .shimmer {
-            height: 140px; border-radius: 8px;
+            height: 120px;
+            border-radius: 8px;
             background: linear-gradient(90deg, #f0f0f0 0%, #e4e4e4 50%, #f0f0f0 100%);
-            background-size: 200% 100%; animation: shimmer 1.5s infinite;
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
             margin-bottom: 20px;
         }
 
@@ -107,55 +158,64 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
-
     </style>
 </head>
 
 <body>
 
+    <!-- ONLY LOGO -->
+    <div class="lsq-navbar">
+        <img src="https://cdn.leadsquared.com/images/logo-blue.png">
+    </div>
+
+    <!-- BLUE HEADER -->
     <div class="header-strip">AI Copilot — Prompt to Report</div>
 
     <div class="main-layout">
 
-        <!-- LEFT (RECENT) -->
+        <!-- LEFT PANEL -->
         <div class="left-panel">
             <div class="left-title">Recent Prompts</div>
             <div id="recentList"></div>
         </div>
 
-        <!-- RIGHT (CONTENT) -->
+        <!-- MAIN CONTENT -->
         <div class="content-area">
 
+            <!-- INPUT -->
             <div class="input-row">
-                <input id="prompt" placeholder="e.g. Show leakage by provider for last 3 months" />
+                <input id="prompt" placeholder="e.g. Show leakage by provider for last 3 months">
                 <button id="generateBtn">Generate</button>
             </div>
 
+            <!-- TOOLBAR -->
             <div class="toolbar">
                 <button class="btn-reset" id="resetBtn">Reset</button>
                 <button class="btn-pdf" id="pdfBtn">Download PDF</button>
             </div>
 
+            <!-- LOADER -->
             <div id="loader" style="display:none;">
                 <div class="shimmer"></div>
-                <div class="shimmer" style="height:80px;"></div>
+                <div class="shimmer" style="height: 80px;"></div>
             </div>
 
+            <!-- REPORT -->
             <div id="reportArea"></div>
 
         </div>
     </div>
 
-<script>
 
-/* ==================================
+<script>
+/* ============================================
    CONFIG
-================================== */
+============================================ */
 const n8nWebhook = "https://leadsquared.app.n8n.cloud/webhook/38fe1165-731f-438b-81df-5bc5de35481c";
 
-/* ==================================
+/* ============================================
    RECENT PROMPTS
-================================== */
+============================================ */
 function loadRecent() {
     const list = JSON.parse(localStorage.getItem("recentPrompts") || "[]");
     const div = document.getElementById("recentList");
@@ -178,9 +238,29 @@ function saveRecent(prompt) {
     loadRecent();
 }
 
-/* ==================================
+/* ============================================
+   SAFE NORMALIZER FOR n8n RESPONSE
+============================================ */
+function normalizeResponse(raw) {
+    try {
+        if (typeof raw === "string" && (raw.startsWith("{") || raw.startsWith("[")))
+            raw = JSON.parse(raw);
+    } catch(e){}
+
+    if (Array.isArray(raw) && raw[0]?.json) return raw[0].json;
+    if (raw?.json) return raw.json;
+
+    const key = Object.keys(raw || {})[0];
+    if (key && key.toLowerCase().includes("object")) return raw[key];
+
+    if (raw?.report_title || raw?.metrics) return raw;
+
+    return { __raw: raw };
+}
+
+/* ============================================
    GENERATE REPORT
-================================== */
+============================================ */
 document.getElementById("generateBtn").onclick = generateReport;
 
 async function generateReport() {
@@ -188,56 +268,48 @@ async function generateReport() {
     if (!prompt) return;
 
     saveRecent(prompt);
-
-    document.getElementById("reportArea").innerHTML = "";
     document.getElementById("loader").style.display = "block";
+    document.getElementById("reportArea").innerHTML = "";
 
-    try {
-        const res = await fetch(n8nWebhook, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt })
-        });
+    const res = await fetch(n8nWebhook, {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ prompt })
+    });
 
-        const data = await res.json();
-        document.getElementById("loader").style.display = "none";
+    const text = await res.text();
+    let parsed = text;
+    try { parsed = JSON.parse(text); } catch(e){}
 
-        renderReport(prompt, data);
+    console.log("RAW RESPONSE:", parsed);
+    const data = normalizeResponse(parsed);
 
-    } catch(e) {
-        document.getElementById("loader").style.display = "none";
-        document.getElementById("reportArea").innerHTML =
-            "<div style='color:red'>Error contacting server.</div>";
-    }
+    document.getElementById("loader").style.display = "none";
+    renderReport(prompt, data);
 }
 
-/* ==================================
-   FLATTEN METRICS (Handles nested objects)
-================================== */
-function flattenMetrics(obj, prefix = "", result = {}) {
-    for (const key in obj) {
-        const value = obj[key];
-        if (typeof value === "object" && value !== null) {
-            flattenMetrics(value, prefix + key + " - ", result);
-        } else {
-            result[prefix + key] = value;
-        }
+/* ============================================
+   FLATTEN METRICS
+============================================ */
+function flatten(obj, prefix = "", out = {}) {
+    for (const k in obj) {
+        if (typeof obj[k] === "object")
+            flatten(obj[k], prefix + k + " - ", out);
+        else out[prefix + k] = obj[k];
     }
-    return result;
+    return out;
 }
 
-/* ==================================
+/* ============================================
    RENDER REPORT
-================================== */
+============================================ */
 function renderReport(prompt, data) {
-
     const area = document.getElementById("reportArea");
     area.innerHTML = "";
 
     const box = document.createElement("div");
     box.className = "report-box";
 
-    /* Collapsible prompt */
     box.innerHTML += `
         <details>
             <summary>Prompt Used</summary>
@@ -245,18 +317,15 @@ function renderReport(prompt, data) {
         </details>
     `;
 
-    /* Title & Summary */
-    box.innerHTML += `
-        <h2>${data.report_title || "Report"}</h2>
-        <p>${data.summary || ""}</p>
-    `;
+    /* Title */
+    const title = data.report_title || data.title || "Report";
+    const summary = data.summary || "";
+    box.innerHTML += `<h2>${title}</h2><p>${summary}</p>`;
 
     /* Metrics */
     if (data.metrics) {
-        const flat = flattenMetrics(data.metrics);
-
+        const flat = flatten(data.metrics);
         box.innerHTML += `<div class="section-title">📊 Metrics Overview</div>`;
-
         for (const k in flat) {
             box.innerHTML += `
                 <div class="metric-item">
@@ -266,64 +335,67 @@ function renderReport(prompt, data) {
             `;
         }
 
-        /* Chart */
         box.innerHTML += `
             <div class="section-title">📈 Visualization</div>
             <canvas id="chart" height="260"></canvas>
         `;
 
-        setTimeout(() => drawChart(flat), 50);
+        setTimeout(() => drawChart(flat), 60);
     }
 
-    /* Recommended Actions */
-    if (data.recommended_actions) {
+    /* Actions */
+    const actions = data.recommended_actions || data.actions || [];
+    if (actions.length > 0) {
         box.innerHTML += `
             <div class="section-title">💡 Recommended Actions</div>
-            <ul>${data.recommended_actions.map(a => `<li>${a}</li>`).join("")}</ul>
+            <ul>${actions.map(a => `<li>${a}</li>`).join("")}</ul>
         `;
     }
 
     area.appendChild(box);
 }
 
-/* ==================================
+/* ============================================
    DRAW CHART
-================================== */
+============================================ */
 function drawChart(metrics) {
-    const ctx = document.getElementById("chart").getContext("2d");
+    const ctx = document.getElementById("chart")?.getContext("2d");
+    if (!ctx) return;
 
-    new Chart(ctx, {
+    const labels = Object.keys(metrics);
+    const values = Object.values(metrics).map(v => Number(v) || 0);
+
+    if (window._chart) window._chart.destroy();
+
+    window._chart = new Chart(ctx, {
         type: "pie",
         data: {
-            labels: Object.keys(metrics),
+            labels,
             datasets: [{
-                data: Object.values(metrics),
-                backgroundColor: ["#1564FF", "#4BA3FF", "#8EC8FF", "#5DD39E", "#35A785", "#FFB26B"]
+                data: values,
+                backgroundColor: ["#1564FF","#4BA3FF","#8EC8FF","#5DD39E","#35A785","#FFB26B"]
             }]
         },
-        options: { responsive: true }
+        options: { responsive:true }
     });
 }
 
-/* ==================================
-   PDF EXPORT
-================================== */
-document.getElementById("pdfBtn").onclick = function () {
-    const element = document.getElementById("reportArea");
-    html2pdf().from(element).save("report.pdf");
+/* ============================================
+   EXPORT PDF
+============================================ */
+document.getElementById("pdfBtn").onclick = () => {
+    if (!document.getElementById("reportArea").innerHTML.trim())
+        return alert("No report to export");
+    html2pdf().from(document.getElementById("reportArea")).save();
 };
 
-/* ==================================
-   RESET
-================================== */
-document.getElementById("resetBtn").onclick = function () {
+/* RESET */
+document.getElementById("resetBtn").onclick = () => {
     document.getElementById("prompt").value = "";
     document.getElementById("reportArea").innerHTML = "";
 };
 
-/* Load recent on start */
 loadRecent();
-
 </script>
 
 </body>
