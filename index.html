@@ -18,15 +18,12 @@
             font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto;
         }
 
-        /* LSQ NAVBAR */
+        /* LSQ NAVBAR — Reduced height & NO logo */
         .lsq-navbar {
             background: #ffffff;
-            padding: 8px 24px;   /* smaller height */
+            padding: 6px 24px;
+            height: 12px;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-        }
-
-        .lsq-navbar img {
-            height: 26px;
         }
 
         /* BLUE HEADER */
@@ -142,7 +139,7 @@
             margin-bottom: 6px;
         }
 
-        /* SHIMMER */
+        /* SHIMMER LOADER */
         .shimmer {
             height: 120px;
             border-radius: 8px;
@@ -156,15 +153,28 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+
+        /* ⭐ FIXED CHART SIZE ⭐ */
+        .chart-wrapper {
+            width: 420px;
+            height: 420px;
+            margin: 25px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #chart {
+            max-width: 420px !important;
+            max-height: 420px !important;
+        }
     </style>
 </head>
 
 <body>
 
-    <!-- ONLY LOGO -->
-    <div class="lsq-navbar">
+    <div class="lsq-navbar"></div>
 
-    <!-- BLUE HEADER -->
     <div class="header-strip">AI Copilot — Prompt to Report</div>
 
     <div class="main-layout">
@@ -202,16 +212,15 @@
         </div>
     </div>
 
-
 <script>
-/* ============================================
+/*************************************************
    CONFIG
-============================================ */
+*************************************************/
 const n8nWebhook = "https://leadsquared.app.n8n.cloud/webhook/38fe1165-731f-438b-81df-5bc5de35481c";
 
-/* ============================================
+/*************************************************
    RECENT PROMPTS
-============================================ */
+*************************************************/
 function loadRecent() {
     const list = JSON.parse(localStorage.getItem("recentPrompts") || "[]");
     const div = document.getElementById("recentList");
@@ -234,9 +243,9 @@ function saveRecent(prompt) {
     loadRecent();
 }
 
-/* ============================================
-   SAFE NORMALIZER FOR n8n RESPONSE
-============================================ */
+/*************************************************
+   NORMALIZER
+*************************************************/
 function normalizeResponse(raw) {
     try {
         if (typeof raw === "string" && (raw.startsWith("{") || raw.startsWith("[")))
@@ -254,9 +263,9 @@ function normalizeResponse(raw) {
     return { __raw: raw };
 }
 
-/* ============================================
+/*************************************************
    GENERATE REPORT
-============================================ */
+*************************************************/
 document.getElementById("generateBtn").onclick = generateReport;
 
 async function generateReport() {
@@ -269,7 +278,7 @@ async function generateReport() {
 
     const res = await fetch(n8nWebhook, {
         method: "POST",
-        headers: { "Content-Type":"application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt })
     });
 
@@ -277,16 +286,15 @@ async function generateReport() {
     let parsed = text;
     try { parsed = JSON.parse(text); } catch(e){}
 
-    console.log("RAW RESPONSE:", parsed);
     const data = normalizeResponse(parsed);
 
     document.getElementById("loader").style.display = "none";
     renderReport(prompt, data);
 }
 
-/* ============================================
-   FLATTEN METRICS
-============================================ */
+/*************************************************
+   FLATTEN + Capitalization
+*************************************************/
 function flatten(obj, prefix = "", out = {}) {
     for (const k in obj) {
         if (typeof obj[k] === "object")
@@ -296,9 +304,13 @@ function flatten(obj, prefix = "", out = {}) {
     return out;
 }
 
-/* ============================================
+function titleCase(str) {
+    return str.replace(/_/g," ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/*************************************************
    RENDER REPORT
-============================================ */
+*************************************************/
 function renderReport(prompt, data) {
     const area = document.getElementById("reportArea");
     area.innerHTML = "";
@@ -313,7 +325,6 @@ function renderReport(prompt, data) {
         </details>
     `;
 
-    /* Title */
     const title = data.report_title || data.title || "Report";
     const summary = data.summary || "";
     box.innerHTML += `<h2>${title}</h2><p>${summary}</p>`;
@@ -325,7 +336,7 @@ function renderReport(prompt, data) {
         for (const k in flat) {
             box.innerHTML += `
                 <div class="metric-item">
-                    <span>${k.replace(/_/g," ")}</span>
+                    <span>${titleCase(k)}</span>
                     <strong>${flat[k]}</strong>
                 </div>
             `;
@@ -333,7 +344,9 @@ function renderReport(prompt, data) {
 
         box.innerHTML += `
             <div class="section-title">📈 Visualization</div>
-            <canvas id="chart" height="260"></canvas>
+            <div class="chart-wrapper">
+                <canvas id="chart"></canvas>
+            </div>
         `;
 
         setTimeout(() => drawChart(flat), 60);
@@ -351,14 +364,14 @@ function renderReport(prompt, data) {
     area.appendChild(box);
 }
 
-/* ============================================
+/*************************************************
    DRAW CHART
-============================================ */
+*************************************************/
 function drawChart(metrics) {
     const ctx = document.getElementById("chart")?.getContext("2d");
     if (!ctx) return;
 
-    const labels = Object.keys(metrics);
+    const labels = Object.keys(metrics).map(titleCase);
     const values = Object.values(metrics).map(v => Number(v) || 0);
 
     if (window._chart) window._chart.destroy();
@@ -376,16 +389,18 @@ function drawChart(metrics) {
     });
 }
 
-/* ============================================
+/*************************************************
    EXPORT PDF
-============================================ */
+*************************************************/
 document.getElementById("pdfBtn").onclick = () => {
     if (!document.getElementById("reportArea").innerHTML.trim())
         return alert("No report to export");
     html2pdf().from(document.getElementById("reportArea")).save();
 };
 
-/* RESET */
+/*************************************************
+   RESET
+*************************************************/
 document.getElementById("resetBtn").onclick = () => {
     document.getElementById("prompt").value = "";
     document.getElementById("reportArea").innerHTML = "";
